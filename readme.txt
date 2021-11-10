@@ -30,7 +30,6 @@ documents_returns      `<int>`
 
 .....                   .....  
 
-
 retrival result file should be in following format
 query-id document-id score
 
