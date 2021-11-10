@@ -8,9 +8,7 @@ word doc_id tf
 
 example:  
 
-
 informaiton MED-3140 10  
-
 
 meaning word information has tf 10 in document 3140.
 
