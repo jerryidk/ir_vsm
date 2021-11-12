@@ -34,6 +34,7 @@ retrival result file should be in following format
 query-id document-id score
 
 -----------------------------------------------------------------
+>>> This, we can probably use galago eval function instead<<<
 eval.py : evaluate performance of the model
 Description:
 Takes a retrieval result file and judgement file (e.g. qrel), and output a evaluation file
