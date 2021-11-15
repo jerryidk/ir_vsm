@@ -4,101 +4,98 @@
 '''to compute, similarity = v_1 dot v_2'''
 
 import numpy as np
+import buildindex
 
 class VSM:
 
-    def __init__(self, index):
-        self.vocab = self.createVocabList(index)
-        self.doc_ids = self.createDocList(index)
-        self.wordIndex = self.createWordIndex(self.vocab)
-        self.docIndex = self.createDocIndex(self.doc_ids)
+    def __init__(self, index: buildindex.Index, weight_func: str):
+        self.index = index
+        self.word_index = self.createWordIndex()
         self.tf = np.zeros(0)
 
-    def createWordIndex(self, vocab):
+        if weight_func == 'tf':
+            self.tf = self.calculateTermFrequency()
+        elif weight_func == 'tflog':
+            self.tf = self.calculateLogTermFrequency()
+        elif weight_func == 'tfnorm':
+            self.tf = self.calculateTermFrequency()
+        else:
+            self.tf = self.calculateTermFrequency()
+
+        self.tfidf = self.calculateTFIDF()
+
+    def createWordIndex(self):
         """ associate word with position in vector """
-        wordIndex = {}
-        index  = 0
-        for word in vocab:
-            wordIndex[word] = index
-            index += 1
-        return wordIndex
+        word_index = {}
+        num  = 0
+        for word in self.index.vocab:
+            word_index[word] = num
+            num += 1
+        return word_index
 
-    def createDocIndex(self, doc_ids):
-        """ associate document with position in vector """
-        docIndex = {}
-        index  = 0
-        for doc_id in doc_ids.keys():
-            self.docIndex[doc_id] = index
-            index += 1
-        return docIndex
-
-    def createDocList(self, index):
-        """ get dictionary of all documents """
-        doc_ids = {}
-        for word in index.keys():
-            for doc_id in index[word].keys():
-                doc_ids[doc_id] = 1
-        return doc_ids
-
-    def createVocabList(self, index):
-        """ get dictionary of unique words in documents """
-        vocab = {}
-        for word in index.keys():
-            vocab[word] = 1
-        return vocab
-
-    def calculateTermFrequency(self, index):
+    def calculateTermFrequency(self):
         """ get term frequency of all vocab terms """
-        tf = np.zeros((len(self.doc_ids), len(self.vocab.keys())))
-        for word in self.vocab.keys():
-            for doc_id in self.doc_ids.keys():
-                tf[self.docIndex[doc_id]][self.wordIndex[word]] = index[word][doc_id]
+        tf = np.zeros((len(self.index.doc_ids), len(self.index.vocab)))
+        for word in self.index.vocab:
+            for doc_id in self.index.doc_ids:
+                tf[self.index.doc_ids[doc_id]][self.word_index[word]] = self.index.getTFinD(word, doc_id)
         return tf
 
-    def calculateDocumentFrequency(self, index):
+    def calculateLogTermFrequency(self):
+        """ get log term frequency of all vocab terms """
+        tf = np.zeros((len(self.index.doc_ids), len(self.index.vocab)))
+        for word in self.index.vocab:
+            for doc_id in self.index.doc_ids:
+                if self.index.getTFinD(word, doc_id) != 0:
+                    tf[self.index.doc_ids[doc_id]][self.word_index[word]] = 1 + np.log(self.index.getTFinD(word, doc_id))
+                else:
+                    tf[self.index.doc_ids[doc_id]][self.word_index[word]] = 0
+        return tf
+
+    def calculateDocumentFrequency(self):
         """ get document frequency """
-        df = np.zeros(len(self.vocab.keys()))
-        for word in self.vocab.keys():
-            frq = 0
-            # For all documents which contain the word
-            for doc_id in index[word].keys():
-                frq = frq + 1
-            df[self.wordIndex[word]] = frq
+        df = np.zeros(len(self.index.vocab))
+        for word in self.index.vocab:
+            df[self.word_index[word]] = self.index.getDocNumContainT(word)
         return df
 
-    def calculateInverseDocumentFrequency(self, index):
+    def calculateInverseDocumentFrequency(self):
         """ get inverse document frequency """
-        df = self.calculateDocumentFrequency(self, index)
-        idf = np.zeros(len(self.vocab.keys()))
-        for word in self.vocab:
-            # Add 1 to prevent division by zero
-            idf[self.wordIndex[word]] = np.log((len(self.doc_ids)) / (1 + df[self.wordIndex[word]]))
+        df = self.calculateDocumentFrequency()
+        idf = np.zeros(len(self.index.vocab))
+        for word in self.index.vocab:
+            idf[self.word_index[word]] = np.log(len(self.index.doc_ids) / df[self.word_index[word]])
         return idf
 
-    def calculateTFIDF(self, index):
+    def calculateTFIDF(self):
         """ get tf-idf matrix """
-        tf = self.calculateTermFrequency(index)
-        idf = self.calculateInverseDocumentFrequency(index)
+        tf = self.tf
+        idf = self.calculateInverseDocumentFrequency()
 
-        tfidf = np.zeros((len(self.doc_ids), len(self.vocab.keys())))
+        tfidf = np.zeros((len(self.index.doc_ids), len(self.index.vocab)))
 
-        for doc_id in self.doc_ids.keys():
-            tfidf[self.docIndex[doc_id]] = tf[self.docIndex[doc_id]] * idf
+        for doc_id in self.index.doc_ids:
+            tfidf[self.index.doc_ids[doc_id]] = tf[self.index.doc_ids[doc_id]] * idf
 
         return tfidf
 
-    def evaluateQuery(self, query, tfidf, num_results):
+    def evaluateQuery(self, query: str, num_results: int):
         """ retrieve top n documents based on query """
-        query_vector = np.zeros(len(query))
+        query_vector = np.zeros(len(self.index.vocab))
 
-        for word in query:
-            if word in self.vocab:
-                query_vector[self.wordIndex[word]] = query.count(word)
+        for word in query.split():
+            if word in self.index.vocab:
+                query_vector[self.word_index[word]] = 1
 
-        scores = np.dot(query_vector, tfidf.T)
+        scores = np.dot(query_vector, self.tfidf.T)
 
         # Sort scores
-        scores_indices = np.argsort(scores)
+        scores_indices = np.argsort(scores)[::-1]
+
+        results = []
+
+        for index in scores_indices[:num_results]:
+            results.append(self.index.num_to_doc[index])
 
         # Return top n results
-        return scores_indices[:num_results]
+        return results

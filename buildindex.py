@@ -13,6 +13,9 @@ class Index:
         self.input = input
         self.doc_num = 0
         self.vocab = {}
+        self.doc_ids = {}
+        self.num_to_doc = {}
+        self.doc_length = {}
         self.processIndex()
 
     def processIndex(self):
@@ -21,11 +24,15 @@ class Index:
             doc_num = 0
             #each line is a document
             for line in f:
-                doc_num += 1
                 #this is from nltk library
                 tokens =  word_tokenize(line)
                 doc_id = tokens[0]
+                self.doc_ids[doc_id] = doc_num
+                self.num_to_doc[doc_num] = doc_id
                 doc_content = tokens[1:]
+                # doc length
+                self.doc_length[doc_num] = len(tokens) - 1
+                doc_num += 1
                 for word in doc_content:
                     if(self.vocab.__contains__(word)):
                         if(self.vocab[word].__contains__(doc_id)):
