@@ -37,7 +37,7 @@ class Index:
                 doc_num += 1
                 for word in doc_content:
                     #stem the word 
-                    word = self.stemmer(word) 
+                    word = self.stemmer.stem(word) 
                     #then proceed to add to vocab
                     if(self.vocab.__contains__(word)):
                         if(self.vocab[word].__contains__(doc_id)):
