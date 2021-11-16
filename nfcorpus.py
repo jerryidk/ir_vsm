@@ -1,7 +1,7 @@
 import buildindex
 import vsm
 
-pathToCorpus = './nfcorpus/dev.docs'
+pathToCorpus = '../nfcorpus/dev.docs'
 
 idx = buildindex.Index(pathToCorpus)
 model = vsm.VSM(idx, 'tflog')

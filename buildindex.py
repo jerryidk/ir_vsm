@@ -1,5 +1,5 @@
+from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize
-pathToCorpus = '/home/jerry/workspace/cs_6550/proj/nfcorpus/dev.docs'
 
 
 class Index:
@@ -9,8 +9,10 @@ class Index:
         word_2 : {doc_id_1 : tf}, ...} ,
          ....  : .... }
     '''
+    #TODO: Stemming
     def __init__(self, input):
         self.input = input
+        self.stemmer = PorterStemmer()
         self.doc_num = 0
         self.vocab = {}
         self.doc_ids = {}
@@ -34,6 +36,9 @@ class Index:
                 self.doc_length[doc_num] = len(tokens) - 1
                 doc_num += 1
                 for word in doc_content:
+                    #stem the word 
+                    word = self.stemmer(word) 
+                    #then proceed to add to vocab
                     if(self.vocab.__contains__(word)):
                         if(self.vocab[word].__contains__(doc_id)):
                             self.vocab[word][doc_id] += 1
