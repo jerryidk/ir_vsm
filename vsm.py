@@ -35,49 +35,28 @@ class VSM:
 
     def calculateTermFrequency(self):
         """ get term frequency of all vocab terms """
-        tf = np.zeros((len(self.index.doc_ids), len(self.index.vocab)))
-        for word in self.index.vocab:
-            for doc_id in self.index.doc_ids:
-                tf[self.index.doc_ids[doc_id]][self.word_index[word]] = self.index.getTFinD(word, doc_id)
-        return tf
+        return np.array([[self.index.getTFinD(word, doc_id) for doc_id in self.index.doc_ids] for word in self.index.vocab]).T
 
     def calculateLogTermFrequency(self):
         """ get log term frequency of all vocab terms """
-        tf = np.zeros((len(self.index.doc_ids), len(self.index.vocab)))
-        for word in self.index.vocab:
-            for doc_id in self.index.doc_ids:
-                if self.index.getTFinD(word, doc_id) != 0:
-                    tf[self.index.doc_ids[doc_id]][self.word_index[word]] = 1 + np.log(self.index.getTFinD(word, doc_id))
-                else:
-                    tf[self.index.doc_ids[doc_id]][self.word_index[word]] = 0
-        return tf
+        return np.array([[1 + np.log(self.index.getTFinD(word, doc_id)) if self.index.getTFinD(word, doc_id) != 0
+                        else 0 for doc_id in self.index.doc_ids] for word in self.index.vocab]).T
 
     def calculateDocumentFrequency(self):
         """ get document frequency """
-        df = np.zeros(len(self.index.vocab))
-        for word in self.index.vocab:
-            df[self.word_index[word]] = self.index.getDocNumContainT(word)
-        return df
+        return np.array([self.index.getDocNumContainT(word) for word in self.index.vocab])
 
     def calculateInverseDocumentFrequency(self):
         """ get inverse document frequency """
         df = self.calculateDocumentFrequency()
-        idf = np.zeros(len(self.index.vocab))
-        for word in self.index.vocab:
-            idf[self.word_index[word]] = np.log(len(self.index.doc_ids) / df[self.word_index[word]])
+        idf = np.array([np.log(len(self.index.doc_ids) / df[self.word_index[word]]) for word in self.index.vocab])
         return idf
 
     def calculateTFIDF(self):
         """ get tf-idf matrix """
         tf = self.tf
         idf = self.calculateInverseDocumentFrequency()
-
-        tfidf = np.zeros((len(self.index.doc_ids), len(self.index.vocab)))
-
-        for doc_id in self.index.doc_ids:
-            tfidf[self.index.doc_ids[doc_id]] = tf[self.index.doc_ids[doc_id]] * idf
-
-        return tfidf
+        return tf * idf
 
     def evaluateQuery(self, query: str, num_results: int):
         """ retrieve top n documents based on query """
@@ -99,3 +78,6 @@ class VSM:
 
         # Return top n results
         return results
+
+
+    # Write query_id, delimitar Q0, doc_id, rank, rank_score, text galago
