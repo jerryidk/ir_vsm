@@ -4,6 +4,7 @@
 '''to compute, similarity = v_1 dot v_2'''
 
 import numpy as np
+from nltk.stem import PorterStemmer
 import buildindex
 
 class VSM:
@@ -12,13 +13,14 @@ class VSM:
         self.index = index
         self.word_index = self.createWordIndex()
         self.tf = np.zeros(0)
+        self.stemmer = PorterStemmer()
 
         if weight_func == 'tf':
             self.tf = self.calculateTermFrequency()
         elif weight_func == 'tflog':
             self.tf = self.calculateLogTermFrequency()
         elif weight_func == 'tfnorm':
-            self.tf = self.calculateTermFrequency()
+            self.tf = self.calculateNormFrequency()
         else:
             self.tf = self.calculateTermFrequency()
 
@@ -42,6 +44,11 @@ class VSM:
         return np.array([[1 + np.log(self.index.getTFinD(word, doc_id)) if self.index.getTFinD(word, doc_id) != 0
                         else 0 for doc_id in self.index.doc_ids] for word in self.index.vocab]).T
 
+    def calculateNormFrequency(self, b: int = 0.01):
+        """ get pivoted norm term frequency of all vocab terms """
+        avgl = sum(self.index.doc_length)
+        return np.array([[self.index.getTFinD(word, doc_id) / (1 - b + b * (self.index.doc_length[self.index.doc_num[doc_id]])/avgl) for doc_id in self.index.doc_ids] for word in self.index.vocab]).T
+
     def calculateDocumentFrequency(self):
         """ get document frequency """
         return np.array([self.index.getDocNumContainT(word) for word in self.index.vocab])
@@ -63,6 +70,8 @@ class VSM:
         query_vector = np.zeros(len(self.index.vocab))
 
         for word in query.split():
+            #stem the word
+            word = self.stemmer.stem(word)
             if word in self.index.vocab:
                 query_vector[self.word_index[word]] = 1
 
