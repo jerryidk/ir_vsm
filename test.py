@@ -11,6 +11,12 @@ def write_test_files():
         w.write('MED-0 hello world hello\n')
         w.write('MED-1 hi hello are you world\n')
         w.write('MED-2 this is for test\n')
+    
+    #test stemming
+    with open('./test/test_file_2', 'w') as w:
+        w.write('MED-0 program programming\n')
+        w.write('MED-1 pipe pipes \n')
+
 
 class TestIndex(unittest.TestCase):
 
@@ -31,6 +37,13 @@ class TestIndex(unittest.TestCase):
         self.assertEqual(model.calculateInverseDocumentFrequency().shape, (9,), 'inverse document frequency should be correct size')
         self.assertEqual(model.calculateTFIDF().shape, (3,9), 'tfidf should be correct size')
         np.testing.assert_array_equal(model.evaluateQuery('hello world', 3), ['MED-0', 'MED-1', 'MED-2'], 'query should return correct ranking for simply query')
+
+    def test_stem(self):
+        idx = buildindex.Index('./test/test_file_2')
+        idx.writeToFile('./test/test_2_index')
+        self.assertEqual(idx.getTFinC('program'), 2, 'program should be 2')
+        self.assertEqual(len(idx.vocab), 2, 'vocab size should be 2')
+        
 
 if __name__ == '__main__':
     write_test_files()
