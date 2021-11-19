@@ -65,7 +65,7 @@ class VSM:
         idf = self.calculateInverseDocumentFrequency()
         return tf * idf
 
-    def evaluateQuery(self, query: str, num_results: int):
+    def evaluateQuery(self, query : str, num_results : int):
         """ retrieve top n documents based on query """
         query_vector = np.zeros(len(self.index.vocab))
 
@@ -80,10 +80,10 @@ class VSM:
         # Sort scores
         scores_indices = np.argsort(scores)[::-1]
 
-        results = []
+        results = {}
 
         for index in scores_indices[:num_results]:
-            results.append(self.index.num_to_doc[index])
+            results[self.index.num_to_doc[index]] = scores[index]
 
         # Return top n results
         return results
