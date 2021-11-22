@@ -33,7 +33,7 @@ class Index:
                 self.num_to_doc[doc_num] = doc_id
                 doc_content = tokens[1:]
                 # doc length
-                self.doc_length[doc_num] = len(tokens) - 1
+                self.doc_length[doc_id] = len(tokens) - 1
                 doc_num += 1
                 for word in doc_content:
                     #stem the word 
