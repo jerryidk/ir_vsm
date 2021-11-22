@@ -9,22 +9,25 @@ import buildindex
 
 class VSM:
 
-    def __init__(self, index: buildindex.Index, weight_func: str):
+    def __init__(self, index: buildindex.Index, weight_func: str, numpy_file: str = None):
         self.index = index
         self.word_index = self.createWordIndex()
         self.tf = np.zeros(0)
         self.stemmer = PorterStemmer()
 
-        if weight_func == 'tf':
-            self.tf = self.calculateTermFrequency()
-        elif weight_func == 'tflog':
-            self.tf = self.calculateLogTermFrequency()
-        elif weight_func == 'tfnorm':
-            self.tf = self.calculateNormFrequency()
+        if numpy_file is not None:
+            self.tfidf = np.load(numpy_file)
         else:
-            self.tf = self.calculateTermFrequency()
+            if weight_func == 'tf':
+                self.tf = self.calculateTermFrequency()
+            elif weight_func == 'tflog':
+                self.tf = self.calculateLogTermFrequency()
+            elif weight_func == 'tfnorm':
+                self.tf = self.calculateNormFrequency()
+            else:
+                self.tf = self.calculateTermFrequency()
 
-        self.tfidf = self.calculateTFIDF()
+            self.tfidf = self.calculateTFIDF()
 
     def createWordIndex(self):
         """ associate word with position in vector """
@@ -46,8 +49,8 @@ class VSM:
 
     def calculateNormFrequency(self, b: int = 0.01):
         """ get pivoted norm term frequency of all vocab terms """
-        avgl = sum(self.index.doc_length)
-        return np.array([[self.index.getTFinD(word, doc_id) / (1 - b + b * (self.index.doc_length[self.index.doc_num[doc_id]])/avgl) for doc_id in self.index.doc_ids] for word in self.index.vocab]).T
+        avgl = sum(self.index.doc_length.values())/len(self.index.doc_length)
+        return np.array([[self.index.getTFinD(word, doc_id) / (1 - b + b * self.index.doc_length[doc_id]/avgl) for doc_id in self.index.doc_ids] for word in self.index.vocab]).T
 
     def calculateDocumentFrequency(self):
         """ get document frequency """
