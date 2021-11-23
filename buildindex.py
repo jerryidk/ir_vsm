@@ -9,7 +9,6 @@ class Index:
         word_2 : {doc_id_1 : tf}, ...} ,
          ....  : .... }
     '''
-    #TODO: Stemming
     def __init__(self, input):
         self.input = input
         self.stemmer = PorterStemmer()
@@ -36,8 +35,9 @@ class Index:
                 self.doc_length[doc_id] = len(tokens) - 1
                 doc_num += 1
                 for word in doc_content:
-                    #stem the word 
-                    word = self.stemmer.stem(word) 
+                    #stem the word
+                    word = "".join(e for e in word if e.isalnum())
+                    word = self.stemmer.stem(word)
                     #then proceed to add to vocab
                     if(self.vocab.__contains__(word)):
                         if(self.vocab[word].__contains__(doc_id)):
