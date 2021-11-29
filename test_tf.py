@@ -13,7 +13,7 @@ pathToQrels = './nfcorpus/test.3-2-1.qrel'
 
 print('Building index')
 idx = buildindex.Index(pathToCorpus)
-vsm_model = vsm.VSM(idx, 'tf')
+vsm_model = vsm.VSM(idx, 'tf', 'idf', 'standard')
 
 vsm_results = []
 pathToResults = './results_test_tf_vsm'

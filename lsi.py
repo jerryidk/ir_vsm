@@ -40,7 +40,7 @@ class LSI:
             word = "".join(e for e in word if e.isalnum())
             word = self.vsm.index.stemmer.stem(word)
             if word in self.vsm.index.vocab:
-                query_vector[self.vsm.word_index[word]] = np.log(self.vsm.index.getDocNum() / self.vsm.index.getDocNumContainT(word))
+                query_vector[self.vsm.word_index[word]] = 1
 
         # Calculate query vector
         query_vector = np.dot(np.dot(query_vector, self.U), inv(np.diag(self.S)))

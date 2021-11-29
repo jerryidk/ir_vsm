@@ -9,7 +9,7 @@ import buildindex
 
 class VSM:
 
-    def __init__(self, index: buildindex.Index, weight_func: str, numpy_file: str = None, b: int = 0.01):
+    def __init__(self, index: buildindex.Index, weight_func: str, idf_func: str, normalization: str, numpy_file: str = None, b: int = 0.01):
         self.index = index
         print('Creating Word Index')
         self.word_index = self.createWordIndex()
@@ -21,8 +21,9 @@ class VSM:
             self.tfidf = np.load(numpy_file)
         else:
             print('No numpy file so will build term frequency')
+
+            # Calculate term frequency
             if weight_func == 'tf':
-                print('Calculating tf')
                 self.tf = self.calculateTermFrequency()
             elif weight_func == 'tflog':
                 self.tf = self.calculateLogTermFrequency()
@@ -31,7 +32,21 @@ class VSM:
             else:
                 self.tf = self.calculateTermFrequency()
 
-            self.idf = self.calculateInverseDocumentFrequency()
+            # Calculate Inverse Document Frequency
+            if idf_func == 'idf':
+                self.idf = self.idf = self.calculateInverseDocumentFrequency()
+            elif idf_func == 'squareidf':
+                self.idf = self.calculateInverseDocumentFrequencySquared()
+            else:
+                self.idf = self.idf = self.calculateInverseDocumentFrequency()
+
+            # Calculate normalization factor
+            if normalization == 'standard':
+                self.norm = 1/np.sqrt(np.sum(np.multiply(self.tf, self.idf)**2, axis=1))
+            elif normalization == 'none':
+                self.norm = np.ones(self.index.getDocNum())
+            else:
+                self.norm = 1/np.sqrt(np.sum(np.multiply(self.tf, self.idf)**2, axis=1))
 
             print('Calculating TF-IDF')
 
@@ -64,9 +79,13 @@ class VSM:
         """ get inverse document frequency """
         return np.array([np.log(self.index.getDocNum() / self.index.getDocNumContainT(word)) for word in self.index.vocab])
 
+    def calculateInverseDocumentFrequencySquared(self):
+        """ get inverse document frequency """
+        return np.array([np.log(self.index.getDocNum() / self.index.getDocNumContainT(word))**2 for word in self.index.vocab])
+
     def calculateTFIDF(self):
         """ get tf-idf matrix """
-        return np.multiply(self.tf, self.idf)
+        return np.multiply(np.multiply(self.tf, self.idf), self.norm[:, np.newaxis])
 
     def evaluateQuery(self, query : str, num_results : int):
         """ retrieve top n documents based on query """
@@ -79,7 +98,7 @@ class VSM:
             word = "".join(e for e in word if e.isalnum())
             word = self.index.stemmer.stem(word)
             if word in self.index.vocab:
-                query_vector[self.word_index[word]] = np.log(self.index.getDocNum() / self.index.getDocNumContainT(word))
+                query_vector[self.word_index[word]] = 1
 
         scores = np.dot(query_vector, self.tfidf.T)
 
