@@ -1,14 +1,28 @@
 
 import numpy as np
+from nltk.tokenize import word_tokenize
 from sklearn.utils.extmath import randomized_svd
 from numpy.linalg import inv
 import vsm
 
 class LSI:
 
-    def __init__(self, vsm: vsm.VSM):
+    def __init__(self, vsm: vsm.VSM, topic: int, use_tf: bool = False):
         self.vsm = vsm
-        self.lsi = self.calculateLSI()
+        if use_tf:
+            self.lsi = self.calculateLSIWithTF(topic)
+        else:
+            self.lsi = self.calculateLSIWithTFIDF(topic)
+
+    def calculateLSIWithTF(self, num_components: int = 100):
+        # Run SVD
+        self.U, self.S, self.VT = randomized_svd(self.vsm.tf.T, n_components=num_components,
+                              n_iter='auto', random_state=None)
+
+    def calculateLSIWithTFIDF(self, num_components: int = 100):
+        # Run SVD
+        self.U, self.S, self.VT = randomized_svd(self.vsm.tfidf.T, n_components=num_components,
+                              n_iter='auto', random_state=None)
 
     def calculateLSI(self, num_components: int = 100):
         # Run SVD
@@ -19,11 +33,14 @@ class LSI:
         """ retrieve top n documents based on query """
         query_vector = np.zeros(len(self.vsm.index.vocab))
 
-        for word in query.split():
+        tokens =  word_tokenize(query)
+        query_token = tokens[1:]
+        for word in query_token:
             #stem the word
-            word = self.vsm.stemmer.stem(word)
+            word = "".join(e for e in word if e.isalnum())
+            word = self.vsm.index.stemmer.stem(word)
             if word in self.vsm.index.vocab:
-                query_vector[self.vsm.word_index[word]] = 1
+                query_vector[self.vsm.word_index[word]] = np.log(self.vsm.index.getDocNum() / self.vsm.index.getDocNumContainT(word))
 
         # Calculate query vector
         query_vector = np.dot(np.dot(query_vector, self.U), inv(np.diag(self.S)))
@@ -39,4 +56,4 @@ class LSI:
             results[self.vsm.index.num_to_doc[index]] = scores[index]
 
         # Return top n results
-        return results
+        return results, scores

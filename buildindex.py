@@ -1,6 +1,6 @@
 from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize
-
+from nltk.corpus import stopwords
 
 class Index:
 
@@ -11,6 +11,7 @@ class Index:
     '''
     def __init__(self, input):
         self.input = input
+        self.stop_words = set(stopwords.words('english'))
         self.stemmer = PorterStemmer()
         self.doc_num = 0
         self.vocab = {}
@@ -39,13 +40,14 @@ class Index:
                     word = "".join(e for e in word if e.isalnum())
                     word = self.stemmer.stem(word)
                     #then proceed to add to vocab
-                    if(self.vocab.__contains__(word)):
-                        if(self.vocab[word].__contains__(doc_id)):
-                            self.vocab[word][doc_id] += 1
+                    if word not in self.stop_words:
+                        if(self.vocab.__contains__(word)):
+                            if(self.vocab[word].__contains__(doc_id)):
+                                self.vocab[word][doc_id] += 1
+                            else:
+                                self.vocab[word][doc_id] = 1
                         else:
-                            self.vocab[word][doc_id] = 1
-                    else:
-                        self.vocab[word] = {doc_id : 1}
+                            self.vocab[word] = {doc_id : 1}
             #for collection stats
             self.doc_num = doc_num
 
@@ -80,9 +82,7 @@ class Index:
         res = 0
         if(self.vocab.__contains__(word)):
             doc_tf_dict = self.vocab[word]
-            for doc in doc_tf_dict:
-                if(doc_tf_dict[doc] > 0):
-                    res += 1
+            res = len(doc_tf_dict)
         return res
 
     #return total documents in corpus
