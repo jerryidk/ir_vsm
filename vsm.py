@@ -110,10 +110,5 @@ class VSM:
         for index in scores_indices[:num_results]:
             results[self.index.num_to_doc[index]] = scores[index]
 
-<<<<<<< HEAD
-
-
     # Write query_id, delimitar Q0, doc_id, rank, rank_score, text galago
-=======
         return results, scores
->>>>>>> feed792a98b76cc123506c1d65de7949bf5f7b7c
