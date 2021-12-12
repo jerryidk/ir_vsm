@@ -11,7 +11,7 @@ def write_test_files():
         w.write('MED-0 hello world hello\n')
         w.write('MED-1 hi hello are you world\n')
         w.write('MED-2 this is for test\n')
-    
+
     #test stemming
     with open('./test/test_file_2', 'w') as w:
         w.write('MED-0 program programming\n')
@@ -31,20 +31,24 @@ class TestIndex(unittest.TestCase):
         self.assertEqual(idx.getDocNum(), 3, 'docs number should 3')
 
         model = vsm.VSM(idx, 'tf')
-        self.assertEqual(len(model.word_index.keys()), 9, 'word_index should have 9 words')
-        self.assertEqual(model.calculateTermFrequency().shape, (3,9), 'term frequency should be correct size')
-        self.assertEqual(model.calculateDocumentFrequency().shape, (9,), 'document frequency should be correct size')
-        self.assertEqual(model.calculateInverseDocumentFrequency().shape, (9,), 'inverse document frequency should be correct size')
-        self.assertEqual(model.calculateTFIDF().shape, (3,9), 'tfidf should be correct size')
-        np.testing.assert_array_equal(model.evaluateQuery('hello world', 3), ['MED-0', 'MED-1', 'MED-2'], 'query should return correct ranking for simply query')
+        self.assertEqual(len(model.word_index.keys()), 5, 'word_index should have 5 words')
+        self.assertEqual(model.calculateTermFrequency().shape, (3,5), 'term frequency should be correct size')
+        self.assertEqual(model.calculateDocumentFrequency().shape, (5,), 'document frequency should be correct size')
+        self.assertEqual(model.calculateInverseDocumentFrequency().shape, (5,), 'inverse document frequency should be correct size')
+        self.assertEqual(model.calculateTFIDF().shape, (3,5), 'tfidf should be correct size')
+        np.testing.assert_array_equal(model.evaluateQuery('hello world', 3), [{'MED-1': 0.4054651081081644, 'MED-0': 0.4054651081081644, 'MED-2': 0.0}], 'query should return correct ranking for simply query')
 
     def test_stem(self):
         idx = buildindex.Index('./test/test_file_2')
         idx.writeToFile('./test/test_2_index')
         self.assertEqual(idx.getTFinC('program'), 2, 'program should be 2')
         self.assertEqual(len(idx.vocab), 2, 'vocab size should be 2')
-        
+
 
 if __name__ == '__main__':
     write_test_files()
     unittest.main()
+
+idx = buildindex.Index('./test/test_file_1')
+
+model = vsm.VSM(idx, 'tf')

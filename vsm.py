@@ -4,12 +4,13 @@
 '''to compute, similarity = v_1 dot v_2'''
 
 import numpy as np
+import scipy.sparse
 from nltk.tokenize import word_tokenize
 import buildindex
 
 class VSM:
 
-    def __init__(self, index: buildindex.Index, weight_func: str, idf_func: str, normalization: str, numpy_file: str = None, b: int = 0.01):
+    def __init__(self, index: buildindex.Index, weight_func: str, idf_func: str, normalization: str, numpy_file: str = None, b: float = 0.01):
         self.index = index
         print('Creating Word Index')
         self.word_index = self.createWordIndex()
@@ -18,7 +19,7 @@ class VSM:
         print('Calculating Term Frequency')
 
         if numpy_file is not None:
-            self.tfidf = np.load(numpy_file)
+            self.tfidf = np.array(scipy.sparse.load_npz(numpy_file).todense())
         else:
             print('No numpy file so will build term frequency')
 
@@ -29,6 +30,8 @@ class VSM:
                 self.tf = self.calculateLogTermFrequency()
             elif weight_func == 'tfnorm':
                 self.tf = self.calculateNormFrequency(b)
+            elif weight_func == 'tfaug':
+                self.tf = self.calculateAugmentedNormFrequency(b)
             else:
                 self.tf = self.calculateTermFrequency()
 
@@ -74,6 +77,11 @@ class VSM:
         """ get pivoted norm term frequency of all vocab terms """
         avgl = sum(self.index.doc_length.values())/len(self.index.doc_length)
         return np.array([[self.index.getTFinD(word, doc_id) / (1 - b + b * self.index.doc_length[doc_id]/avgl) for doc_id in self.index.doc_ids] for word in self.index.vocab]).T
+
+    def calculateAugmentedNormFrequency(self, b: int = 0.01):
+        """ get augmented norm term frequency of all vocab terms """
+        self.tf = self.calculateTermFrequency()
+        return np.array([[0.5 + 0.5 * self.index.getTFinD(word, doc_id) / max(self.tf[self.index.doc_ids[doc_id], :]) if self.index.getTFinD(word, doc_id) > 0 else 0 for doc_id in self.index.doc_ids] for word in self.index.vocab]).T
 
     def calculateInverseDocumentFrequency(self):
         """ get inverse document frequency """

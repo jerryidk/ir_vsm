@@ -24,11 +24,6 @@ class LSI:
         self.U, self.S, self.VT = randomized_svd(self.vsm.tfidf.T, n_components=num_components,
                               n_iter='auto', random_state=None)
 
-    def calculateLSI(self, num_components: int = 100):
-        # Run SVD
-        self.U, self.S, self.VT = randomized_svd(self.vsm.tfidf.T, n_components=num_components,
-                              n_iter='auto', random_state=None)
-
     def evaluateQuery(self, query : str, num_results : int):
         """ retrieve top n documents based on query """
         query_vector = np.zeros(len(self.vsm.index.vocab))
